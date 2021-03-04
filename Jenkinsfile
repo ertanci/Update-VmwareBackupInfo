@@ -9,8 +9,13 @@ pipeline {
                 script {
                     withCredentials([sshUserPrivateKey(credentialsId: 'clientCred', keyFileVariable: 'mykey', passphraseVariable: 'pp', usernameVariable: 'myuser')]) {
                        REMOTE_COMMAND_CALL = sh(
-                        script: 'ssh -T -i  $mykey $myuser@10.0.2.4 /home/ertan/bScript.sh > /jnkstmp/bScriptLog',
+                        script: 'ssh -T -i  $mykey $myuser@10.0.2.4 /home/ertan/bScript.sh',
                         returnStdout: true)
+                        
+                        REMOTE_COMMAND_CALL = sh(
+                        script: 'ssh -T -i  $mykey $myuser@10.0.2.4 cat /home/ertan/log.log > /jnkstmp/bScriptLog',
+                        returnStdout: true)
+                        
                         echo "${REMOTE_COMMAND_CALL}"
                     }
                 }
