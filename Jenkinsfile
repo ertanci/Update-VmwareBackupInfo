@@ -1,27 +1,28 @@
 pipeline {
     agent none
     stages {
-        stage('DoingLinux') {
+        stage('one') {
             agent {
                 label "master"
             }
             steps {
                 script {
-                    REMOTE_COMMAND_CALL = sh(
-                        script: 'ssh -T -i  /var/lib/jenkins/myssh/id_rsa ertan@10.0.2.4 /home/ertan/bScript.sh > /jnkstmp/bScriptLog',
+                    withCredentials([sshUserPrivateKey(credentialsId: 'clientCred', keyFileVariable: 'mykey', passphraseVariable: 'pp', usernameVariable: 'myuser')]) {
+                       REMOTE_COMMAND_CALL = sh(
+                        script: 'ssh -T -i  $mykey $myuser@10.0.2.4 /home/ertan/bScript.sh > /jnkstmp/bScriptLog',
                         returnStdout: true)
-                    echo "${REMOTE_COMMAND_CALL}"
-
+                        echo "${REMOTE_COMMAND_CALL}"
+                    }
                 }
             }
         }
-        stage('DoingWin') {
+        stage('two') {
             agent {
                 label "centos7"
             }
             steps {
                 script {
-                    withCredentials([usernamePassword(credentialsId: 'winCred', usernameVariable: 'a', passwordVariable: 'b')]) {
+                    withCredentials([usernamePassword(credentialsId: 'winCred', usernameVariable: 'winUser', passwordVariable: 'winPass')]) {
                         REMOTE_WIN_CALL = sh(
                             script: 'pwsh -f remoting.ps1 -u $winUser -p $winPass -m "10.0.2.7"',
                             returnStdout: true)
@@ -36,7 +37,7 @@ pipeline {
 
             }
         }
-        stage('UpdateVM') {
+        stage('three') {
             when {
                 expression {
                     REMOTE_WIN_CALL.contains("True")
@@ -48,7 +49,7 @@ pipeline {
             steps {
                 script {
                     UPDATE_VMWARE = sh(
-                        script: 'pwsh -c "Invoke-Command -ScriptBlock {Import-Module -Name /jenkins/workspace/sil_test/UpdateVmware.ps1;Update-VmwareBackupInfo -strVcenter tata -strUserName user -strPass pass}" | tail -n +15',
+                        script: 'pwsh -c "Invoke-Command -ScriptBlock {Import-Module -Name /jenkins/workspace/sil_test/UpdateVmware.ps1;Update-VmwareBackupInfo -strVcenter tata -strUserName user -strPassword pass}" | tail -n +1',
                         returnStdout: true)
                     echo "${UPDATE_VMWARE}"
                 }
